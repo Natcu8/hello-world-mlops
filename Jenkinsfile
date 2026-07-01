@@ -2,25 +2,30 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/Natcu8/hello-world-mlops.git'
-            }
-        }
 
         stage('Verify Python') {
             steps {
-                sh 'python --version'
-                sh 'pip3 --version'
+                sh '''
+                    python --version
+                    pip3 --version
+                '''
+            }
+        }
+
+        stage('Create Virtual Environment') {
+            steps {
+                sh '''
+                    python -m venv .venv
+                '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 sh '''
+                    . .venv/bin/activate
                     python -m pip install --upgrade pip setuptools wheel
-                    python -m pip install -r requirements.txt
+                    pip install -r requirements.txt
                 '''
             }
         }
@@ -28,6 +33,7 @@ pipeline {
         stage('Train Model') {
             steps {
                 sh '''
+                    . .venv/bin/activate
                     python train.py
                     ls -la artifacts
                 '''
@@ -48,6 +54,10 @@ pipeline {
 
         failure {
             echo '❌ Pipeline failed.'
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
